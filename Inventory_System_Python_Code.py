@@ -11,9 +11,9 @@ class InventorySystem:
                 database="inventory_system"
             )
             self.cursor = self.conn.cursor()
-            print("✅ Connected to Inventory DB")
+            print(" Connected to Inventory DB")
         except Error as e:
-            print("❌ Connection Error:", e)
+            print(" Connection Error:", e)
             exit()
 
     # --------------------------
@@ -25,9 +25,9 @@ class InventorySystem:
             self.cursor.execute(
                 "INSERT INTO categories (name) VALUES (%s)", (name,))
             self.conn.commit()
-            print("✅ Category added")
+            print(" Category added")
         except Error as e:
-            print("❌ Error:", e)
+            print(" Error:", e)
 
     # --------------------------
     # PRODUCT
@@ -43,9 +43,9 @@ class InventorySystem:
                 (name, category_id, price)
             )
             self.conn.commit()
-            print("✅ Product added")
+            print(" Product added")
         except Error as e:
-            print("❌ Error:", e)
+            print(" Error:", e)
 
     def view_products(self):
         query = """
@@ -73,9 +73,9 @@ class InventorySystem:
                 (name, contact)
             )
             self.conn.commit()
-            print("✅ Supplier added")
+            print(" Supplier added")
         except Error as e:
-            print("❌ Error:", e)
+            print(" Error:", e)
 
     # --------------------------
     # PURCHASE (STOCK IN)
@@ -91,9 +91,9 @@ class InventorySystem:
                 (product_id, supplier_id, qty)
             )
             self.conn.commit()
-            print("📥 Purchase recorded (Stock Updated)")
+            print(" Purchase recorded (Stock Updated)")
         except Error as e:
-            print("❌ Error:", e)
+            print(" Error:", e)
 
     # --------------------------
     # SALE (STOCK OUT)
@@ -108,9 +108,9 @@ class InventorySystem:
                 (product_id, qty)
             )
             self.conn.commit()
-            print("📤 Sale recorded (Stock Updated)")
+            print(" Sale recorded (Stock Updated)")
         except Error as e:
-            print("❌ Error:", e)
+            print(" Error:", e)
 
     # --------------------------
     # REPORTS
@@ -119,7 +119,7 @@ class InventorySystem:
         self.cursor.execute("SELECT * FROM products WHERE stock < 5")
         rows = self.cursor.fetchall()
 
-        print("\n⚠️ LOW STOCK ITEMS:")
+        print("\n LOW STOCK ITEMS:")
         for r in rows:
             print(f"{r[1]} (Stock: {r[4]})")
 
@@ -131,7 +131,7 @@ class InventorySystem:
         """
         self.cursor.execute(query)
 
-        print("\n📊 SALES REPORT:")
+        print("\n SALES REPORT:")
         for r in self.cursor.fetchall():
             print(f"Product ID: {r[0]} | Sold: {r[1]}")
 
@@ -172,11 +172,11 @@ class InventorySystem:
             elif choice == '9':
                 break
             else:
-                print("❌ Invalid choice")
+                print(" Invalid choice")
 
         self.cursor.close()
         self.conn.close()
-        print("🔒 Connection closed")
+        print(" Connection closed")
 
 
 # RUN
