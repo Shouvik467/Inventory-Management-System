@@ -1,0 +1,158 @@
+mysql> CREATE DATABASE inventory_system;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> use inventory_system
+Database changed
+mysql> CREATE TABLE categories (
+    ->     category_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     name VARCHAR(100) NOT NULL UNIQUE
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE TABLE products (
+    ->     product_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     name VARCHAR(100) NOT NULL,
+    ->     category_id INT,
+    ->     price DECIMAL(10,2) NOT NULL,
+    ->     stock INT DEFAULT 0,
+    ->
+    ->     FOREIGN KEY (category_id) REFERENCES categories(category_id)
+    ->     ON DELETE SET NULL
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE TABLE suppliers (
+    ->     supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     name VARCHAR(100) NOT NULL,
+    ->     contact VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE TABLE purchases (
+    ->     purchase_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     product_id INT,
+    ->     supplier_id INT,
+    ->     quantity INT NOT NULL,
+    ->     purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->
+    ->     FOREIGN KEY (product_id) REFERENCES products(product_id)
+    ->     ON DELETE CASCADE,
+    ->
+    ->     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
+    ->     ON DELETE SET NULL
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE TABLE sales (
+    ->     sale_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     product_id INT,
+    ->     quantity INT NOT NULL,
+    ->     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->
+    ->     FOREIGN KEY (product_id) REFERENCES products(product_id)
+    ->     ON DELETE CASCADE
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DELIMITER //
+mysql> -- Increase stock after purchase
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TRIGGER trg_purchase_stock
+    -> AFTER INSERT ON purchases
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     UPDATE products
+    ->     SET stock = stock + NEW.quantity
+    ->     WHERE product_id = NEW.product_id;
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> -- Decrease stock after sale
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TRIGGER trg_sale_stock
+    -> AFTER INSERT ON sales
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     UPDATE products
+    ->     SET stock = stock - NEW.quantity
+    ->     WHERE product_id = NEW.product_id;
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> -- Prevent negative stock
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TRIGGER trg_no_negative_stock
+    -> BEFORE UPDATE ON products
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     IF NEW.stock < 0 THEN
+    ->         SIGNAL SQLSTATE '45000'
+    ->         SET MESSAGE_TEXT = 'Stock cannot be negative';
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DELIMITER ;
+mysql> SELECT * FROM categories;
++-------------+-------------+
+| category_id | name        |
++-------------+-------------+
+|           1 | Electronics |
++-------------+-------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM products;
++------------+--------+-------------+----------+-------+
+| product_id | name   | category_id | price    | stock |
++------------+--------+-------------+----------+-------+
+|          1 | Laptop |        1101 | 50000.00 |     8 |
+|          2 | Mobile |        1102 | 30000.00 |    10 |
++------------+--------+-------------+----------+-------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT * FROM suppliers;
++-------------+-------------+------------+
+| supplier_id | name        | contact    |
++-------------+-------------+------------+
+|           1 | ABC Traders | 9999999999 |
++-------------+-------------+------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM purchases;
++-------------+------------+-------------+----------+---------------------+
+| purchase_id | product_id | supplier_id | quantity | purchase_date       |
++-------------+------------+-------------+----------+---------------------+
+|           1 |          1 |         100 |       10 | 2026-04-23 18:18:50 |
+|           2 |          2 |         100 |       15 | 2026-04-23 18:19:07 |
++-------------+------------+-------------+----------+---------------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT * FROM sales;
++---------+------------+----------+---------------------+
+| sale_id | product_id | quantity | sale_date           |
++---------+------------+----------+---------------------+
+|       1 |          1 |        2 | 2026-04-23 18:19:19 |
+|       2 |          2 |        5 | 2026-04-23 18:19:29 |
++---------+------------+----------+---------------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT
+    ->     p.product_id,
+    ->     p.name AS product_name,
+    ->     c.name AS category,
+    ->     p.price,
+    ->     p.stock
+    -> FROM products p
+    -> LEFT JOIN categories c
+    -> ON p.category_id = c.category_id;
++------------+--------------+----------+----------+-------+
+| product_id | product_name | category | price    | stock |
++------------+--------------+----------+----------+-------+
+|          1 | Laptop       | NULL     | 50000.00 |     8 |
+|          2 | Mobile       | NULL     | 30000.00 |    10 |
++------------+--------------+----------+----------+-------+
+2 rows in set (0.00 sec)
+
